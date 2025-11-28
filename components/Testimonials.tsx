@@ -1,13 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { Testimonial } from '../types';
 import { TESTIMONIALS_DATA } from '../constants';
 import { Quote } from 'lucide-react';
 
 const Testimonials: React.FC = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(TESTIMONIALS_DATA);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      if (!isSupabaseConfigured()) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('testimonials')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          setTestimonials(data);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch testimonials, using fallback', err);
+      }
+    };
+
+    fetchTestimonials();
+  }, []);
+
   return (
     <section className="py-32 relative">
       {/* Background Separator */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      
+
       <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
         <div className="text-center mb-16 space-y-4">
           <h2 className="text-3xl md:text-4xl font-serif text-white/90">Ce qu'ils disent de nous</h2>
@@ -18,8 +43,8 @@ const Testimonials: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {TESTIMONIALS_DATA.map((item, index) => (
-            <div 
+          {testimonials.map((item, index) => (
+            <div
               key={item.id}
               className="group relative p-8 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500 hover:-translate-y-1"
               style={{ transitionDelay: `${index * 100}ms` }}
@@ -28,7 +53,7 @@ const Testimonials: React.FC = () => {
               <div className="absolute top-6 right-6 opacity-10 group-hover:opacity-30 transition-opacity duration-500 text-blue-400">
                 <Quote className="w-10 h-10" />
               </div>
-              
+
               <div className="relative z-10 flex flex-col h-full">
                 <div className="mb-6 flex-grow">
                   <p className="text-lg text-white/70 font-serif italic leading-relaxed">

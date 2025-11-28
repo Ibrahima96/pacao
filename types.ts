@@ -28,3 +28,10 @@ export interface GalleryItem {
   size: 'small' | 'medium' | 'large'; // Pour le layout masonry
   category: string;
 }
+
+export interface SiteContent {
+  key: string;
+  value: string;
+  description?: string;
+  updated_at?: string;
+}
