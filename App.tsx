@@ -155,6 +155,7 @@ const AppContent: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         serviceTitle={selectedServiceTitle}
+        whatsappNumber={whatsappNumber}
       />
 
       {/* Background Atmosphere */}
@@ -283,7 +284,8 @@ const AppContent: React.FC = () => {
             </p>
             <button
               onClick={() => {
-                window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+                setSelectedServiceTitle('Projet Général');
+                setIsModalOpen(true);
               }}
               className="group relative px-8 py-4 bg-transparent border border-white/30 text-white font-medium tracking-widest text-xs uppercase hover:bg-white hover:text-black transition-all duration-500 overflow-hidden"
             >

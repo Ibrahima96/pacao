@@ -1,7 +1,7 @@
 
 import { StoryChapter, Testimonial, GalleryItem } from './types';
 
-export const WHATSAPP_NUMBER = "221779883924"; 
+export const WHATSAPP_NUMBER = '221779883924';
 
 // Données de repli (fallback) si Supabase n'est pas connecté
 export const DEFAULT_SERVICES_DATA: StoryChapter[] = [
@@ -10,7 +10,7 @@ export const DEFAULT_SERVICES_DATA: StoryChapter[] = [
     title: 'Identité & Branding',
     subtitle: 'Création Unique • Design • Finitions',
     content: `Votre identité est votre signature. Chez Pacao, nous forgeons des logos mémorables et des supports d'exception (cartes de visite luxe, papeterie) qui incarnent l'essence de votre activité avec une précision d'orfèvre.`,
-    image: 'https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=1200&auto=format&fit=crop', 
+    image: 'https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=1200&auto=format&fit=crop',
     alignment: 'center',
     colorTheme: '#fbbf24',
     price: 'Sur devis',
@@ -21,7 +21,7 @@ export const DEFAULT_SERVICES_DATA: StoryChapter[] = [
     title: 'Print Grand Format',
     subtitle: 'Impact Visuel • Murales • Publicité',
     content: `Dominez l'espace. Nos impressions grand format, des fresques murales immersives aux campagnes publicitaires urbaines, sont conçues pour captiver le regard avec une colorimétrie et une définition irréprochables.`,
-    image: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?q=80&w=1200&auto=format&fit=crop', 
+    image: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?q=80&w=1200&auto=format&fit=crop',
     alignment: 'left',
     colorTheme: '#f472b6',
     price: 'Dès 15.000 FCFA'
@@ -31,7 +31,7 @@ export const DEFAULT_SERVICES_DATA: StoryChapter[] = [
     title: 'Personnalisation',
     subtitle: 'Textile • Packaging • Objets',
     content: `Marquez les esprits et la matière. Du flocage textile haute tenue pour vos équipes aux emballages produits sur mesure, nous transformons chaque objet en vecteur de votre marque.`,
-    image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=1200&auto=format&fit=crop', 
+    image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=1200&auto=format&fit=crop',
     alignment: 'right',
     colorTheme: '#34d399',
     badges: ['Nouveau', 'Promo']
@@ -41,9 +41,9 @@ export const DEFAULT_SERVICES_DATA: StoryChapter[] = [
     title: 'Hardware & Tech',
     subtitle: 'Équipement • Réseaux • Performance',
     content: `La puissance au service de la créativité. Nous fournissons et installons le matériel informatique et les infrastructures électriques critiques pour garantir la continuité et la performance de vos opérations.`,
-    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1200&auto=format&fit=crop', 
+    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1200&auto=format&fit=crop',
     alignment: 'center',
-    colorTheme: '#60a5fa', 
+    colorTheme: '#60a5fa',
   },
 ];
 

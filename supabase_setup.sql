@@ -140,7 +140,7 @@ INSERT INTO site_content (key, value, description) VALUES
   ('hero_title', 'PACAO', 'Main hero title'),
   ('hero_tagline', 'L''excellence au service de l''image', 'Hero tagline above title'),
   ('hero_subtitle', 'Nous transformons vos idées en supports tangibles. Design, Impression & Matériel Professionnel.', 'Hero subtitle/description'),
-  ('whatsapp_number', '221123456789', 'WhatsApp contact number with country code'),
+  ('whatsapp_number', '221779883924', 'WhatsApp contact number with country code'),
   ('site_name', 'Pacao (PDS)', 'Site/company name'),
   ('site_description', 'Solutions d''impression & digitales', 'Site description/tagline'),
   ('footer_cta_title', 'Prêt à collaborer ?', 'Footer call-to-action title'),
@@ -189,4 +189,3 @@ INSERT INTO gallery (image, alt, category, size) VALUES
   ('https://images.unsplash.com/photo-1542744173-05336fcc7ad4?w=800', 'Stand publicitaire professionnel', 'Stands', 'large'),
   ('https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800', 'Enseigne lumineuse boutique', 'Enseignes', 'medium')
 ON CONFLICT DO NOTHING;
-supabase_setup
