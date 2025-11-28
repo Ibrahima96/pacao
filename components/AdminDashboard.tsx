@@ -1,109 +1,103 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { StoryChapter } from '../types';
-import { X, Plus, Trash2, Save, Upload, LogOut, Loader2, AlertTriangle, Tag } from 'lucide-react';
+import { StoryChapter, GalleryItem } from '../types';
+import { X, Plus, Trash2, Save, Upload, LogOut, Loader2, AlertTriangle, Tag, LayoutGrid, Image as ImageIcon } from 'lucide-react';
 
 interface AdminDashboardProps {
   onClose: () => void;
   onUpdate: () => void;
 }
 
+type Tab = 'services' | 'gallery';
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onUpdate }) => {
   const [session, setSession] = useState<any>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('services');
+
+  // Service State
   const [services, setServices] = useState<StoryChapter[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Form states for adding/editing
-  const [formData, setFormData] = useState<Partial<StoryChapter>>({});
-  // Helper state for badges text input
+  const [serviceForm, setServiceForm] = useState<Partial<StoryChapter>>({});
   const [badgesInput, setBadgesInput] = useState('');
+
+  // Gallery State
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [galleryForm, setGalleryForm] = useState<Partial<GalleryItem>>({});
+  const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchServices();
+      if (session) {
+          fetchServices();
+          fetchGallery();
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchServices();
+      if (session) {
+          fetchServices();
+          fetchGallery();
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const fetchServices = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('services')
-      .select('*')
-      .order('created_at', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching services:', error);
-    } else {
-      setServices(data || []);
-    }
-    setLoading(false);
+    const { data } = await supabase.from('services').select('*').order('created_at', { ascending: true });
+    setServices(data || []);
+  };
+
+  const fetchGallery = async () => {
+    const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    setGalleryItems(data || []);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSupabaseConfigured()) {
-        setError("Supabase n'est pas configuré. Veuillez vérifier les variables d'environnement.");
+        setError("Supabase non configuré.");
         return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setError(error.message);
     setLoading(false);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    onClose();
-  };
-
-  const handleSave = async () => {
-    if (!formData.title || !formData.content) return;
+  // --- SERVICE LOGIC ---
+  const handleSaveService = async () => {
+    if (!serviceForm.title) return;
     setLoading(true);
-
-    // Process badges input into array
     const badgesArray = badgesInput.split(',').map(b => b.trim()).filter(b => b.length > 0);
-
     const dataToSave = {
-        ...formData,
+        ...serviceForm,
         badges: badgesArray,
-        alignment: formData.alignment || 'center',
-        colorTheme: formData.colorTheme || '#ffffff'
+        alignment: serviceForm.alignment || 'center',
+        colorTheme: serviceForm.colorTheme || '#ffffff'
     };
 
     try {
         if (editingId === 'new') {
-            const { error } = await supabase.from('services').insert([dataToSave]);
-            if (error) throw error;
+            await supabase.from('services').insert([dataToSave]);
         } else {
-            const { error } = await supabase.from('services').update(dataToSave).eq('id', editingId);
-            if (error) throw error;
+            await supabase.from('services').update(dataToSave).eq('id', editingId);
         }
-        
         await fetchServices();
         setEditingId(null);
-        setFormData({});
-        setBadgesInput('');
-        onUpdate(); // Notify App to refresh data
+        setServiceForm({});
+        onUpdate(); 
     } catch (err: any) {
         setError(err.message);
     } finally {
@@ -111,30 +105,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onUpdat
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) return;
-    
+  const handleDeleteService = async (id: string) => {
+    if (!window.confirm('Supprimer ce service ?')) return;
     setLoading(true);
-    const { error } = await supabase.from('services').delete().eq('id', id);
-    if (error) {
-        console.error(error);
-        setError("Erreur lors de la suppression");
-    } else {
-        await fetchServices();
-        onUpdate();
-    }
+    await supabase.from('services').delete().eq('id', id);
+    await fetchServices();
+    onUpdate();
     setLoading(false);
   };
 
-  const startEdit = (service: StoryChapter) => {
+  const startEditService = (service: StoryChapter) => {
     setEditingId(service.id);
-    setFormData(service);
+    setServiceForm(service);
     setBadgesInput(service.badges ? service.badges.join(', ') : '');
   };
 
-  const startNew = () => {
+  const startNewService = () => {
     setEditingId('new');
-    setFormData({
+    setServiceForm({
         title: '',
         subtitle: '',
         content: '',
@@ -147,239 +135,208 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onUpdat
     setBadgesInput('');
   };
 
+  // --- GALLERY LOGIC ---
+  const handleSaveGallery = async () => {
+    if (!galleryForm.image) return;
+    setLoading(true);
+    const dataToSave = {
+        ...galleryForm,
+        size: galleryForm.size || 'medium',
+        category: galleryForm.category || 'Portfolio'
+    };
+
+    try {
+        if (editingGalleryId === 'new') {
+            await supabase.from('gallery').insert([dataToSave]);
+        } else {
+            await supabase.from('gallery').update(dataToSave).eq('id', editingGalleryId);
+        }
+        await fetchGallery();
+        setEditingGalleryId(null);
+        setGalleryForm({});
+    } catch (err: any) {
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const handleDeleteGallery = async (id: string) => {
+     if (!window.confirm('Supprimer cette image ?')) return;
+     setLoading(true);
+     await supabase.from('gallery').delete().eq('id', id);
+     await fetchGallery();
+     setLoading(false);
+  };
+
+  const startNewGallery = () => {
+      setEditingGalleryId('new');
+      setGalleryForm({
+          image: '',
+          alt: '',
+          category: '',
+          size: 'medium'
+      });
+  };
+
+  const startEditGallery = (item: GalleryItem) => {
+      setEditingGalleryId(item.id);
+      setGalleryForm(item);
+  };
+
+  // --- RENDER LOGIN ---
   if (!session) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl">
         <div className="w-full max-w-md p-8 bg-white/5 border border-white/10 rounded-2xl relative">
-          <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white">
-            <X className="w-6 h-6" />
-          </button>
+          <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white"><X className="w-6 h-6" /></button>
           <h2 className="text-2xl font-serif text-white mb-6 text-center">Connexion Admin</h2>
-          
           {!isSupabaseConfigured() && (
-            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex gap-3">
-               <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0" />
-               <div className="text-sm text-yellow-200/80">
-                 <p className="font-semibold mb-1">Base de données non connectée</p>
-                 <p>Pour activer le dashboard, veuillez configurer <code>SUPABASE_URL</code> et <code>SUPABASE_ANON_KEY</code>.</p>
-               </div>
-            </div>
+             <div className="mb-4 text-yellow-500 text-sm">Base de données non configurée.</div>
           )}
-
-          {error && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-200 text-sm rounded">{error}</div>}
-          
+          {error && <div className="mb-4 text-red-400 text-sm">{error}</div>}
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-white/50 mb-2">Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded p-3 text-white focus:border-blue-500 outline-none"
-                disabled={!isSupabaseConfigured()}
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-widest text-white/50 mb-2">Mot de passe</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded p-3 text-white focus:border-blue-500 outline-none"
-                disabled={!isSupabaseConfigured()}
-              />
-            </div>
-            <button 
-              type="submit" 
-              disabled={loading || !isSupabaseConfigured()}
-              className="w-full py-3 bg-white text-black font-bold uppercase tracking-widest hover:bg-gray-200 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Connexion...' : 'Se connecter'}
-            </button>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded p-3 text-white" placeholder="Email" disabled={!isSupabaseConfigured()}/>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded p-3 text-white" placeholder="Mot de passe" disabled={!isSupabaseConfigured()}/>
+            <button type="submit" disabled={loading || !isSupabaseConfigured()} className="w-full py-3 bg-white text-black font-bold uppercase hover:bg-gray-200 mt-4 disabled:opacity-50">Connexion</button>
           </form>
         </div>
       </div>
     );
   }
 
+  // --- RENDER DASHBOARD ---
   return (
     <div className="fixed inset-0 z-[100] bg-[#050505] overflow-y-auto">
-      <div className="sticky top-0 z-10 bg-[#0a0a0a] border-b border-white/10 px-6 py-4 flex justify-between items-center">
-        <h2 className="text-xl font-serif text-white flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Dashboard Pacao
-        </h2>
+      <div className="sticky top-0 z-50 bg-[#0a0a0a] border-b border-white/10 px-6 py-4 flex justify-between items-center">
+        <h2 className="text-xl font-serif text-white flex items-center gap-2">Dashboard Pacao</h2>
         <div className="flex items-center gap-4">
-            <button onClick={handleLogout} className="flex items-center gap-2 text-xs uppercase tracking-widest text-red-400 hover:text-red-300">
-                <LogOut className="w-4 h-4" /> Déconnexion
-            </button>
-            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white">
-                <X className="w-6 h-6" />
-            </button>
+            <button onClick={async () => { await supabase.auth.signOut(); onClose(); }} className="text-xs text-red-400 hover:text-red-300 uppercase"><LogOut className="w-4 h-4" /></button>
+            <button onClick={onClose} className="text-white hover:bg-white/10 rounded-full p-2"><X className="w-6 h-6" /></button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-6 md:p-12">
-        <div className="flex justify-between items-end mb-8">
-            <div>
-                <h1 className="text-3xl font-bold text-white mb-2">Gérer les services</h1>
-                <p className="text-white/40 text-sm">Modifiez le contenu, les images et les descriptions.</p>
-            </div>
+      <div className="max-w-6xl mx-auto p-6 md:p-12">
+        {/* TABS */}
+        <div className="flex gap-4 mb-8 border-b border-white/10 pb-4">
             <button 
-                onClick={startNew}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-blue-900/20"
+                onClick={() => setActiveTab('services')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === 'services' ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}
             >
-                <Plus className="w-4 h-4" /> Nouveau Service
+                <LayoutGrid className="w-4 h-4" /> Services
+            </button>
+            <button 
+                onClick={() => setActiveTab('gallery')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${activeTab === 'gallery' ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}
+            >
+                <ImageIcon className="w-4 h-4" /> Galerie
             </button>
         </div>
 
-        {editingId && (
-            <div className="mb-12 p-6 bg-white/5 border border-white/10 rounded-xl animate-in fade-in slide-in-from-top-4">
-                <h3 className="text-lg font-medium text-white mb-6 border-b border-white/5 pb-4">
-                    {editingId === 'new' ? 'Ajouter un service' : 'Modifier le service'}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs uppercase text-white/40">Titre</label>
-                            <input 
-                                className="w-full bg-black/20 border border-white/10 rounded p-3 text-white mt-1 focus:border-blue-500 outline-none"
-                                value={formData.title || ''}
-                                onChange={e => setFormData({...formData, title: e.target.value})}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs uppercase text-white/40">Sous-titre</label>
-                            <input 
-                                className="w-full bg-black/20 border border-white/10 rounded p-3 text-white mt-1 focus:border-blue-500 outline-none"
-                                value={formData.subtitle || ''}
-                                onChange={e => setFormData({...formData, subtitle: e.target.value})}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs uppercase text-white/40">Prix (ex: 5000 FCFA)</label>
-                            <input 
-                                className="w-full bg-black/20 border border-white/10 rounded p-3 text-white mt-1 focus:border-blue-500 outline-none"
-                                value={formData.price || ''}
-                                onChange={e => setFormData({...formData, price: e.target.value})}
-                                placeholder="Facultatif"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs uppercase text-white/40 flex items-center gap-2">
-                                <Tag className="w-3 h-3"/> Badges (séparés par virgules)
-                            </label>
-                            <input 
-                                className="w-full bg-black/20 border border-white/10 rounded p-3 text-white mt-1 focus:border-blue-500 outline-none"
-                                value={badgesInput}
-                                onChange={e => setBadgesInput(e.target.value)}
-                                placeholder="Ex: Promo, Nouveau, Populaire"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs uppercase text-white/40">Couleur (Hex)</label>
-                            <div className="flex items-center gap-2 mt-1">
-                                <input 
-                                    type="color"
-                                    className="h-10 w-10 bg-transparent border-none"
-                                    value={formData.colorTheme || '#ffffff'}
-                                    onChange={e => setFormData({...formData, colorTheme: e.target.value})}
-                                />
-                                <input 
-                                    className="flex-1 bg-black/20 border border-white/10 rounded p-3 text-white font-mono focus:border-blue-500 outline-none"
-                                    value={formData.colorTheme || ''}
-                                    onChange={e => setFormData({...formData, colorTheme: e.target.value})}
-                                />
+        {/* SERVICES TAB */}
+        {activeTab === 'services' && (
+            <>
+                <div className="flex justify-between items-end mb-8">
+                    <h1 className="text-3xl font-bold text-white">Services</h1>
+                    <button onClick={startNewService} className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg"><Plus className="w-4 h-4" /> Ajouter</button>
+                </div>
+
+                {editingId && (
+                    <div className="mb-12 p-6 bg-white/5 border border-white/10 rounded-xl">
+                        <h3 className="text-white mb-4">{editingId === 'new' ? 'Nouveau Service' : 'Modifier Service'}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <input placeholder="Titre" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={serviceForm.title || ''} onChange={e => setServiceForm({...serviceForm, title: e.target.value})} />
+                                <input placeholder="Sous-titre" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={serviceForm.subtitle || ''} onChange={e => setServiceForm({...serviceForm, subtitle: e.target.value})} />
+                                <input placeholder="Prix (Optionnel, ex: 15.000 FCFA)" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={serviceForm.price || ''} onChange={e => setServiceForm({...serviceForm, price: e.target.value})} />
+                                <input placeholder="Badges (sep. virgules, ex: Promo, Nouveau)" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={badgesInput} onChange={e => setBadgesInput(e.target.value)} />
+                                <input type="color" className="h-10 w-full" value={serviceForm.colorTheme || '#ffffff'} onChange={e => setServiceForm({...serviceForm, colorTheme: e.target.value})} />
+                            </div>
+                            <div className="space-y-4">
+                                <input placeholder="Image URL" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={serviceForm.image || ''} onChange={e => setServiceForm({...serviceForm, image: e.target.value})} />
+                                <textarea placeholder="Description" className="w-full h-32 bg-black/20 border border-white/10 p-3 text-white rounded resize-none" value={serviceForm.content || ''} onChange={e => setServiceForm({...serviceForm, content: e.target.value})} />
                             </div>
                         </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button onClick={() => setEditingId(null)} className="px-4 py-2 text-white/60">Annuler</button>
+                            <button onClick={handleSaveService} disabled={loading} className="px-6 py-2 bg-white text-black rounded hover:bg-gray-200">{loading ? '...' : 'Enregistrer'}</button>
+                        </div>
                     </div>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs uppercase text-white/40">Image URL</label>
-                            <div className="flex gap-2 mt-1">
-                                <input 
-                                    className="flex-1 bg-black/20 border border-white/10 rounded p-3 text-white focus:border-blue-500 outline-none"
-                                    value={formData.image || ''}
-                                    onChange={e => setFormData({...formData, image: e.target.value})}
-                                    placeholder="https://..."
-                                />
-                                <div className="w-12 h-12 rounded bg-white/5 overflow-hidden border border-white/10 flex items-center justify-center">
-                                    {formData.image ? <img src={formData.image} className="w-full h-full object-cover" /> : <Upload className="w-4 h-4 text-white/30"/>}
+                )}
+
+                <div className="grid gap-4">
+                    {services.map(s => (
+                        <div key={s.id} className="flex justify-between items-center p-4 bg-white/[0.03] border border-white/5 rounded-lg group hover:bg-white/[0.05] transition-colors">
+                            <div className="flex items-center gap-4">
+                                <div className="relative w-12 h-12 rounded overflow-hidden">
+                                    <img src={s.image} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                <div>
+                                    <span className="text-white font-medium block">{s.title}</span>
+                                    <span className="text-xs text-white/40">
+                                        {s.price || 'Aucun prix'} {s.badges && s.badges.length > 0 && `• ${s.badges.length} badge(s)`}
+                                    </span>
                                 </div>
                             </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => startEditService(s)} className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded text-sm transition-colors">Modifier</button>
+                                <button onClick={() => handleDeleteService(s.id)} className="p-2 text-red-400 hover:bg-red-900/20 rounded transition-colors"><Trash2 className="w-4 h-4"/></button>
+                            </div>
                         </div>
-                        <div>
-                            <label className="text-xs uppercase text-white/40">Description</label>
-                            <textarea 
-                                className="w-full h-32 bg-black/20 border border-white/10 rounded p-3 text-white mt-1 focus:border-blue-500 outline-none resize-none"
-                                value={formData.content || ''}
-                                onChange={e => setFormData({...formData, content: e.target.value})}
-                            />
-                        </div>
-                    </div>
+                    ))}
                 </div>
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/5">
-                    <button 
-                        onClick={() => setEditingId(null)}
-                        className="px-6 py-2 text-white/60 hover:text-white transition-colors"
-                    >
-                        Annuler
-                    </button>
-                    <button 
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-8 py-2 bg-white text-black font-medium rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4" />} Enregistrer
-                    </button>
-                </div>
-            </div>
+            </>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
-            {services.map(service => (
-                <div key={service.id} className="group flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-lg hover:border-white/20 transition-colors">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded bg-black/50 overflow-hidden">
-                            <img src={service.image} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+        {/* GALLERY TAB */}
+        {activeTab === 'gallery' && (
+            <>
+                <div className="flex justify-between items-end mb-8">
+                    <h1 className="text-3xl font-bold text-white">Galerie</h1>
+                    <button onClick={startNewGallery} className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg"><Plus className="w-4 h-4" /> Ajouter Image</button>
+                </div>
+
+                {editingGalleryId && (
+                     <div className="mb-12 p-6 bg-white/5 border border-white/10 rounded-xl">
+                        <h3 className="text-white mb-4">{editingGalleryId === 'new' ? 'Nouvelle Image' : 'Modifier Image'}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div className="space-y-4">
+                                <input placeholder="Titre (Alt text)" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={galleryForm.alt || ''} onChange={e => setGalleryForm({...galleryForm, alt: e.target.value})} />
+                                <input placeholder="Catégorie" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={galleryForm.category || ''} onChange={e => setGalleryForm({...galleryForm, category: e.target.value})} />
+                                <select className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={galleryForm.size || 'medium'} onChange={e => setGalleryForm({...galleryForm, size: e.target.value as any})}>
+                                    <option value="small">Petit (Carré)</option>
+                                    <option value="medium">Moyen (Portrait)</option>
+                                    <option value="large">Grand (Paysage/Haut)</option>
+                                </select>
+                             </div>
+                             <div className="space-y-4">
+                                <input placeholder="Image URL" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={galleryForm.image || ''} onChange={e => setGalleryForm({...galleryForm, image: e.target.value})} />
+                                {galleryForm.image && <img src={galleryForm.image} className="h-32 rounded object-cover border border-white/10" />}
+                             </div>
                         </div>
-                        <div>
-                            <h4 className="text-white font-medium flex items-center gap-2">
-                                {service.title} 
-                                {service.price && <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-white/60">{service.price}</span>}
-                            </h4>
-                            <p className="text-white/40 text-xs truncate max-w-xs">{service.subtitle}</p>
-                            {service.badges && service.badges.length > 0 && (
-                                <div className="flex gap-1 mt-1">
-                                    {service.badges.map(b => (
-                                        <span key={b} className="text-[10px] text-blue-300/70">#{b}</span>
-                                    ))}
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button onClick={() => setEditingGalleryId(null)} className="px-4 py-2 text-white/60">Annuler</button>
+                            <button onClick={handleSaveGallery} disabled={loading} className="px-6 py-2 bg-white text-black rounded hover:bg-gray-200">{loading ? '...' : 'Enregistrer'}</button>
+                        </div>
+                     </div>
+                )}
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {galleryItems.map(item => (
+                        <div key={item.id} className="group relative aspect-square bg-white/5 rounded-lg overflow-hidden border border-white/5">
+                            <img src={item.image} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                <span className="text-white text-xs">{item.alt}</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => startEditGallery(item)} className="p-2 bg-white text-black rounded-full"><Tag className="w-3 h-3"/></button>
+                                    <button onClick={() => handleDeleteGallery(item.id)} className="p-2 bg-red-500 text-white rounded-full"><Trash2 className="w-3 h-3"/></button>
                                 </div>
-                            )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                            onClick={() => startEdit(service)}
-                            className="px-4 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 rounded transition-colors"
-                        >
-                            Modifier
-                        </button>
-                        <button 
-                            onClick={() => handleDelete(service.id)}
-                            className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
+                    ))}
                 </div>
-            ))}
-            {services.length === 0 && !loading && (
-                <div className="text-center py-12 text-white/30 border border-dashed border-white/10 rounded-lg">
-                    Aucun service trouvé. Ajoutez-en un !
-                </div>
-            )}
-        </div>
+            </>
+        )}
       </div>
     </div>
   );

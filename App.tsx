@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import Atmosphere from './components/Atmosphere';
 import Chapter from './components/Chapter';
 import Testimonials from './components/Testimonials';
+import OrderModal from './components/OrderModal';
 import { Gallery } from './components/Gallery';
 import { LoreOracle } from './components/LoreOracle';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -15,6 +17,10 @@ const App: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [services, setServices] = useState<StoryChapter[]>(DEFAULT_SERVICES_DATA);
   const [loadingServices, setLoadingServices] = useState(true);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedServiceTitle, setSelectedServiceTitle] = useState('');
 
   const fetchServices = async () => {
     if (!isSupabaseConfigured()) {
@@ -32,7 +38,6 @@ const App: React.FC = () => {
       if (!error && data && data.length > 0) {
         setServices(data);
       } else {
-        // Fallback if table is empty or doesn't exist yet
         setServices(DEFAULT_SERVICES_DATA);
       }
     } catch (err) {
@@ -57,6 +62,11 @@ const App: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleOrderClick = (chapter: StoryChapter) => {
+    setSelectedServiceTitle(chapter.title);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="relative min-h-screen text-white selection:bg-blue-500/30 bg-[#050505]">
       {showAdmin && (
@@ -65,6 +75,12 @@ const App: React.FC = () => {
             onUpdate={fetchServices}
         />
       )}
+
+      <OrderModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        serviceTitle={selectedServiceTitle} 
+      />
 
       {/* Background Atmosphere */}
       <Atmosphere />
@@ -77,7 +93,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Main Navigation / Header (Minimal) */}
+      {/* Main Navigation */}
       <nav className="fixed top-0 left-0 w-full px-8 py-6 z-40 flex justify-between items-center mix-blend-difference pointer-events-none">
         <div className="flex items-center gap-3">
            <div className="p-2 border border-white/20 rounded-full backdrop-blur-md bg-black/20">
@@ -100,7 +116,6 @@ const App: React.FC = () => {
 
       {/* Hero Section */}
       <header className="relative h-[85vh] flex flex-col items-center justify-center z-10 overflow-hidden">
-        {/* Abstract Hero Background Element */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-blue-900/10 via-purple-900/5 to-amber-900/10 rounded-full blur-[120px] animate-pulse-glow" />
 
         <div className="z-10 text-center space-y-8 px-4 animate-in fade-in zoom-in duration-1000 max-w-4xl mx-auto">
@@ -144,24 +159,26 @@ const App: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
           {loadingServices ? (
-             // Loading Skeletons
              Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="h-96 rounded-2xl bg-white/5 animate-pulse border border-white/5"></div>
              ))
           ) : (
             services.map((chapter, index) => (
-                <Chapter key={chapter.id} chapter={chapter} index={index} />
+                <Chapter 
+                  key={chapter.id} 
+                  chapter={chapter} 
+                  index={index} 
+                  onOrder={handleOrderClick}
+                />
             ))
           )}
         </div>
 
-        {/* Gallery Section */}
         <Gallery />
 
-        {/* Testimonials Section */}
         <Testimonials />
         
-        {/* Footer / Contact */}
+        {/* Footer */}
         <section className="mt-32 pt-24 pb-12 border-t border-white/5 flex flex-col items-center justify-center relative bg-gradient-to-b from-transparent to-black/80">
           <div className="text-center space-y-8 p-8 max-w-2xl relative z-10">
             <h2 className="text-4xl md:text-5xl font-serif text-white/90">Prêt à collaborer ?</h2>
@@ -190,7 +207,6 @@ const App: React.FC = () => {
         </section>
       </main>
 
-      {/* Gemini Assistant */}
       <LoreOracle />
     </div>
   );

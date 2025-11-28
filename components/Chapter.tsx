@@ -1,14 +1,15 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { StoryChapter } from '../types';
-import { ArrowRight, MessageCircle, Tag } from 'lucide-react';
-import { WHATSAPP_NUMBER } from '../constants';
+import { ArrowRight, MessageCircle } from 'lucide-react';
 
 interface ChapterProps {
   chapter: StoryChapter;
   index: number;
+  onOrder: (chapter: StoryChapter) => void;
 }
 
-const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
+const Chapter: React.FC<ChapterProps> = ({ chapter, index, onOrder }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,8 +25,8 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
         }
       },
       { 
-        threshold: 0.15, // Slightly higher threshold to ensure element is actually entering
-        rootMargin: '0px 0px -50px 0px' // Trigger slightly before bottom of screen
+        threshold: 0.15,
+        rootMargin: '0px 0px -50px 0px'
       }
     );
 
@@ -44,37 +45,29 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
       const rect = containerRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
       
-      // Only animate if in view to save resources
-      if (rect.top < windowHeight && rect.bottom > 0) {
-        // Calculate relative position: -1 (top) to 1 (bottom) roughly
+      // Only animate if in view or slightly outside to prepare
+      if (rect.top < windowHeight + 100 && rect.bottom > -100) {
+        // Calculate relative position (-1 to 1 range roughly, 0 is center)
         const relativePos = (rect.top + rect.height / 2 - windowHeight / 2) / (windowHeight / 2);
         
-        // Parallax intensity (pixels to move)
-        // Reverse direction or speed based on alignment to create depth variety
-        const speedFactor = chapter.alignment === 'center' ? 1.2 : 0.8;
-        const parallaxAmount = relativePos * 25 * speedFactor; 
+        // Speed factor depends on alignment to creating varied depth
+        const speedFactor = chapter.alignment === 'center' ? 1.4 : 0.9;
+        
+        // Parallax amount based on percentage of screen height for responsiveness
+        const parallaxAmount = relativePos * (windowHeight * 0.15) * speedFactor; 
         
         parallaxRef.current.style.transform = `translateY(${parallaxAmount}px)`;
       }
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial calculation
+    handleScroll(); 
     
     return () => window.removeEventListener('scroll', handleScroll);
   }, [chapter.alignment]);
 
-  const handleWhatsAppClick = () => {
-    const message = `Bonjour Pacao, je suis intéressé par votre service : ${chapter.title}. Pouvons-nous en discuter ?`;
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
-
-  // Calculate staggered delay using modulo to create a recurring wave effect
-  // This prevents excessive delays for items further down the list (e.g., item 20 won't wait 3 seconds)
-  // The grid goes up to 3 columns, so a modulo of 3 syncs perfectly with the visual rows.
+  // Modulo based delay
   const transitionDelay = `${(index % 3) * 150}ms`;
-
   const isCentered = chapter.alignment === 'center';
 
   return (
@@ -89,17 +82,14 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
     >
       {/* Image Container with Parallax Wrapper */}
       <div className="relative w-full h-72 overflow-hidden">
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10 opacity-80" />
         
-        {/* Color Overlay on Hover */}
         <div 
           className="absolute inset-0 z-10 mix-blend-overlay opacity-0 group-hover:opacity-40 transition-opacity duration-700"
           style={{ backgroundColor: chapter.colorTheme }}
         />
 
-        {/* Parallax Container Wrapper */}
-        <div ref={parallaxRef} className="w-full h-[120%] -mt-[5%] will-change-transform">
+        <div ref={parallaxRef} className="w-full h-[140%] -mt-[10%] will-change-transform">
           <img 
             src={chapter.image} 
             alt={chapter.title}
@@ -107,14 +97,16 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
           />
         </div>
         
-        {/* Badges (Top Left) */}
         {chapter.badges && chapter.badges.length > 0 && (
           <div className="absolute top-4 left-4 z-20 flex gap-2 flex-wrap max-w-[70%]">
             {chapter.badges.map((badge, idx) => (
               <span 
                 key={idx}
-                className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase rounded bg-white/90 text-black shadow-lg animate-in fade-in slide-in-from-top-2 duration-700"
-                style={{ animationDelay: `${idx * 100 + 200}ms` }}
+                className="px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-700 hover:bg-white/10 transition-colors"
+                style={{ 
+                    animationDelay: `${idx * 100 + 200}ms`,
+                    borderColor: `${chapter.colorTheme}40`
+                }}
               >
                 {badge}
               </span>
@@ -122,7 +114,6 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
           </div>
         )}
         
-        {/* Floating Category Tag (Top Right) */}
         <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-[-10px] group-hover:translate-y-0">
           <span 
             className="px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white/90 shadow-lg"
@@ -133,9 +124,7 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
         </div>
       </div>
 
-      {/* Content Container */}
       <div className="flex flex-col flex-grow p-6 sm:p-8 relative">
-        {/* Subtle glow effect behind text */}
         <div 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-[80px] opacity-0 group-hover:opacity-15 transition-opacity duration-700 pointer-events-none"
           style={{ backgroundColor: chapter.colorTheme }}
@@ -161,7 +150,6 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
           {chapter.content}
         </p>
 
-        {/* Action Area */}
         <div className="mt-auto flex items-end justify-between pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors z-10">
           
           <div className="flex flex-col gap-1">
@@ -173,12 +161,12 @@ const Chapter: React.FC<ChapterProps> = ({ chapter, index }) => {
                  {chapter.price}
                </span>
              ) : (
-               <span className="text-sm italic text-white/40">Sur demande</span>
+               <span className="text-sm italic text-white/40 group-hover:text-white/60 transition-colors">Sur demande</span>
              )}
           </div>
 
           <button 
-            onClick={handleWhatsAppClick}
+            onClick={() => onOrder(chapter)}
             className="flex items-center justify-center w-10 h-10 rounded-full border border-white/10 bg-white/5 text-white group-hover:bg-[#25D366] group-hover:border-[#25D366] group-hover:text-white transition-all duration-300 group-hover:scale-110 shadow-lg"
             aria-label="Contacter sur WhatsApp"
           >

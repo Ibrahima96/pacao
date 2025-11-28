@@ -1,3 +1,4 @@
+
 import { StoryChapter, Testimonial, GalleryItem } from './types';
 
 export const WHATSAPP_NUMBER = "221779883924"; 
@@ -107,6 +108,48 @@ export const GALLERY_DATA: GalleryItem[] = [
     id: 'g6',
     image: 'https://images.unsplash.com/photo-1632924194098-b80c54152a55?q=80&w=800&auto=format&fit=crop',
     alt: 'Papeterie premium',
+    size: 'small',
+    category: 'Print'
+  },
+  {
+    id: 'g7',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop',
+    alt: 'Serveurs & Data',
+    size: 'large',
+    category: 'Tech'
+  },
+  {
+    id: 'g8',
+    image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=800&auto=format&fit=crop',
+    alt: 'Broderie Casquette',
+    size: 'small',
+    category: 'Textile'
+  },
+  {
+    id: 'g9',
+    image: 'https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=800&auto=format&fit=crop',
+    alt: 'Packaging Produit',
+    size: 'medium',
+    category: 'Branding'
+  },
+  {
+    id: 'g10',
+    image: 'https://images.unsplash.com/photo-1585250003058-294723cd81b4?q=80&w=800&auto=format&fit=crop',
+    alt: 'Affiche Urbaine',
+    size: 'medium',
+    category: 'Print'
+  },
+  {
+    id: 'g11',
+    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800&auto=format&fit=crop',
+    alt: 'Création Logo',
+    size: 'large',
+    category: 'Design'
+  },
+  {
+    id: 'g12',
+    image: 'https://images.unsplash.com/photo-1598298711411-9a4f4d852cb7?q=80&w=800&auto=format&fit=crop',
+    alt: 'Stickers Découpés',
     size: 'small',
     category: 'Print'
   }
