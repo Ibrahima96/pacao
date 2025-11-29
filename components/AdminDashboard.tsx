@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { StoryChapter, GalleryItem, Testimonial, SiteContent } from '../types';
 import { X, Plus, Trash2, Save, Upload, LogOut, Loader2, AlertTriangle, Tag, LayoutGrid, Image as ImageIcon, MessageSquare, Settings } from 'lucide-react';
+import { ImageUpload } from './ImageUpload';
 
 interface AdminDashboardProps {
     onClose: () => void;
@@ -358,7 +358,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onUpdat
                                         <input type="color" className="h-10 w-full" value={serviceForm.colorTheme || '#ffffff'} onChange={e => setServiceForm({ ...serviceForm, colorTheme: e.target.value })} />
                                     </div>
                                     <div className="space-y-4">
-                                        <input placeholder="Image URL" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={serviceForm.image || ''} onChange={e => setServiceForm({ ...serviceForm, image: e.target.value })} />
+                                        <ImageUpload
+                                            currentImage={serviceForm.image}
+                                            onImageChange={(url) => setServiceForm({ ...serviceForm, image: url })}
+                                            label="Image du service"
+                                        />
                                         <textarea placeholder="Description" className="w-full h-32 bg-black/20 border border-white/10 p-3 text-white rounded resize-none" value={serviceForm.content || ''} onChange={e => setServiceForm({ ...serviceForm, content: e.target.value })} />
                                     </div>
                                 </div>
@@ -415,8 +419,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onUpdat
                                         </select>
                                     </div>
                                     <div className="space-y-4">
-                                        <input placeholder="Image URL" className="w-full bg-black/20 border border-white/10 p-3 text-white rounded" value={galleryForm.image || ''} onChange={e => setGalleryForm({ ...galleryForm, image: e.target.value })} />
-                                        {galleryForm.image && <img src={galleryForm.image} className="h-32 rounded object-cover border border-white/10" />}
+                                        <ImageUpload
+                                            currentImage={galleryForm.image}
+                                            onImageChange={(url) => setGalleryForm({ ...galleryForm, image: url })}
+                                            label="Image de la galerie"
+                                        />
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-3 mt-6">
