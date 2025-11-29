@@ -24,3 +24,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.GIT_DELETE_BRANCH.md
+
