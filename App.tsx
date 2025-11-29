@@ -206,7 +206,7 @@ const AppContent: React.FC = () => {
             </p>
           </div>
 
-          <h1 className="display-font text-6xl md:text-8xl lg:text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/30 drop-shadow-2xl tracking-tight">
+          <h1 className="display-font text-2xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/30 drop-shadow-2xl tracking-tight">
             {siteContent.hero_title || 'PACAO'}
           </h1>
 
