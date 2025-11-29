@@ -301,6 +301,7 @@ const AppContent: React.FC = () => {
               <span className="hover:text-white/60 cursor-pointer transition-colors">Email</span>
             </div>
             <p>© {new Date().getFullYear()} Pacao (PDS). Tous droits réservés.</p>
+            <p className="text-white/30">Créé par Bicom Lab</p>
           </div>
         </section>
       </main>
